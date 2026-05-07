@@ -25,15 +25,19 @@ interface FieldError {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const AGENT_TYPES = ["Matching","Followup", "Qualification", "Calling", "Support", "Operations", "Success"];
+const AGENT_TYPES = ["Matching","Followup", "Qualification", "Calling", "Recommendation", "Mining", "Analytics", "Social" /* "Success" */];
 
 const SUB_TYPES: Record<string, string[]> = {
     Qualification: ["Lead Scoring", "Pipeline Analytics", "Meeting Scheduler", "Proposal Generator", "Deal Tracking"],
     Calling: ["Data Enrichment", "Report Generator", "Workflow Automation", "Integration Manager", "Audit Logger"],
+    Recommendation: ["Property Recommendation", "Lead Scoring", "Pipeline Analytics", "Meeting Scheduler", "Proposal Generator"],
     Marketing: ["Email Outreach", "Content Generation", "Ad Optimization", "SEO Assistant", "Campaign Analytics"],
     Support: ["Ticket Resolution", "FAQ Bot", "Escalation Manager", "Sentiment Analysis", "Knowledge Base"],
     Operations: ["Data Enrichment", "Report Generator", "Workflow Automation", "Integration Manager", "Audit Logger"],
     Success: ["Onboarding", "Churn Prediction", "Health Scoring", "Renewal Manager", "Upsell Detector"],
+    Mining: ["Customer Segmentation", "Churn Analysis", "Sales Forecasting", "Behavioral Analytics", "Risk Assessment"],
+    Analytics: ["Customer Segmentation", "Churn Analysis", "Sales Forecasting", "Behavioral Analytics", "Risk Assessment"],
+    Social: ["Content Creation", "Post Scheduling", "Engagement Analysis", "Trend Monitoring", "Competitor Analysis"],
 };
 
 const CUSTOMER_TYPES = ["All", "SMB", "Mid-Market", "Enterprise", "Startup"];
@@ -53,9 +57,10 @@ const TYPE_ICON: Record<string, string | ReactElement> = {
     Followup:<img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335523/img-7_xjwzbl.png" alt="Followup" className=" object-contain w-10 h-10" />,
     Qualification:<img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335520/img-1_nz99v7.png" alt="Qualification" className=" object-contain w-10 h-10" />,
     Calling: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335521/img-6_mky5rb.png" alt="Calling" className=" object-contain w-10 h-10" />,
-    Support: "🎧",
-    Operations: "⚙️",
-    Success: "🌟",
+    Recommendation: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335520/img-3_scja92.png" alt="Recommendation" className=" object-contain w-10 h-10" />,
+    Mining: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335552/img-8_twulvb.png" alt="Mining" className=" object-contain w-10 h-10" />,
+    Analytics: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335552/img-8_twulvb.png" alt="Analytics" className=" object-contain w-10 h-10" />,
+    Social: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335521/img-4_damgxf.png" alt="Social" className=" object-contain w-10 h-10" />,
 };
 
 const TYPE_COLORS: Record<string, { bg: string; text: string; border: string; ring: string }> = {
@@ -63,9 +68,10 @@ const TYPE_COLORS: Record<string, { bg: string; text: string; border: string; ri
     Followup: { bg: "bg-amber-50 dark:bg-amber-950", text: "text-amber-700 dark:text-amber-300", border: "border-amber-200 dark:border-amber-800", ring: "ring-amber-300 dark:ring-amber-700" },
     Qualification: { bg: "bg-emerald-50 dark:bg-emerald-950", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-200 dark:border-emerald-800", ring: "ring-emerald-300 dark:ring-emerald-700" },
     Calling: { bg: "bg-violet-50 dark:bg-violet-950", text: "text-violet-700 dark:text-violet-300", border: "border-violet-200 dark:border-violet-800", ring: "ring-violet-300 dark:ring-violet-700" },
-    Support: { bg: "bg-sky-50 dark:bg-sky-950", text: "text-sky-700 dark:text-sky-300", border: "border-sky-200 dark:border-sky-800", ring: "ring-sky-300 dark:ring-sky-700" },
-    Operations: { bg: "bg-amber-50 dark:bg-amber-950", text: "text-amber-700 dark:text-amber-300", border: "border-amber-200 dark:border-amber-800", ring: "ring-amber-300 dark:ring-amber-700" },
-    Success: { bg: "bg-rose-50 dark:bg-rose-950", text: "text-rose-700 dark:text-rose-300", border: "border-rose-200 dark:border-rose-800", ring: "ring-rose-300 dark:ring-rose-700" },
+    Recommendation: { bg: "bg-sky-50 dark:bg-sky-950", text: "text-sky-700 dark:text-sky-300", border: "border-sky-200 dark:border-sky-800", ring: "ring-sky-300 dark:ring-sky-700" },
+    Mining: { bg: "bg-amber-50 dark:bg-amber-950", text: "text-amber-700 dark:text-amber-300", border: "border-amber-200 dark:border-amber-800", ring: "ring-amber-300 dark:ring-amber-700" },
+    Analytics: { bg: "bg-rose-50 dark:bg-rose-950", text: "text-rose-700 dark:text-rose-300", border: "border-rose-200 dark:border-rose-800", ring: "ring-rose-300 dark:ring-rose-700" },
+    Social: { bg: "bg-green-50 dark:bg-green-950", text: "text-green-700 dark:text-green-300", border: "border-green-200 dark:border-green-800", ring: "ring-green-300 dark:ring-green-700" },
 };
 
 // ─── Reusable field wrapper ───────────────────────────────────────────────────
@@ -245,7 +251,7 @@ export default function NewAgentPage() {
 
     return (
         <div className="min-h-screen bg-white rounded-md dark:bg-gray-950">
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
                 {/* ── Breadcrumb ── */}
                 <div className="flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500 mb-8">

@@ -10,7 +10,7 @@ import Link from "next/link";
 import { ArrowDown, ArrowUp, ArrowUpRight, Bot, ChevronsLeft, ChevronsRight, PlusSquare, Sparkles, UserPlus, Zap } from "lucide-react";
 import ProtectedRoute from "../component/ProtectedRoutes";
 import toast, { Toaster } from "react-hot-toast";
-import { getCustomer, deleteCustomer, getFilteredCustomer, updateCustomer, assignCustomer, deleteAllCustomer, getDuplicateContacts, getTodayCustomer, startCallByAIAgent, getCallLogs, getCallReport } from "@/store/customer";
+import { getCustomer, deleteCustomer, getFilteredCustomer, updateCustomer, assignCustomer, deleteAllCustomer, getDuplicateContacts, getTodayCustomer, startCallByAIAgent, getCallLogs, getCallReport, closeCustomerDeal } from "@/store/customer";
 import { CheckDialogDataInterface, CustomerAdvInterface, customerAssignInterface, customerGetDataInterface, DeleteDialogDataInterface } from "@/store/customer.interface";
 import DeleteDialog from "../component/popups/DeleteDialog";
 import { getCampaign } from "@/store/masters/campaign/campaign";
@@ -59,7 +59,7 @@ import FollowupAddDialog from "../component/popups/FollowupAddDialog";
 import { deleteFollowup, getFollowupByCustomerId } from "@/store/customerFollowups";
 import { customerFollowupAllDataInterface } from "@/store/customerFollowups.interface";
 import { FollowupDeleteDialogDataInterface } from "@/store/contactFollowups.interface";
-import { BsPersonFill } from "react-icons/bs";
+import { BsArrowLeftShort, BsPersonFill } from "react-icons/bs";
 import GoogleMapDialog from "../component/popups/GoogleMapDialogue";
 import CustomerEditDialog from "../component/popups/CustomerEditDialog";
 import { callAllDataInterface } from "@/store/masters/call/call.interface";
@@ -79,6 +79,13 @@ import { HiCalendar } from "react-icons/hi2";
 import { create } from "domain";
 import QualificationAgentWorkspace from "../component/aiagents/QualificationAgentWorkspace";
 import CallingAgentWorkspace from "../component/aiagents/CallingAgentWorkspace";
+import RecommendAgentWorkspace from "../component/aiagents/RecommendAgentWorkspace";
+import AIAgentSidebar from "../component/aiagents/AIAgentSidebar";
+import DataMiningAgentWorkspace from "../component/aiagents/AnalyticsAgentWorkspace";
+import AnalyticsAgentWorkspace from "../component/aiagents/AnalyticsAgentWorkspace";
+import SocialMiningAgentWorkspace from "../component/aiagents/MiningAgentWorkspace";
+import SocialAgentWorkspace from "../component/aiagents/SocialAgentWorkspace";
+import { FaHandshakeSimple } from "react-icons/fa6";
 
 
 interface DeleteAllDialogDataInterface { }
@@ -123,7 +130,7 @@ export default function Customer() {
     { role: 'user' | 'ai'; text: string }[]
   >([]);
 
-    const [qualificationAiMessages, setQualificationAiMessages] = useState<
+  const [qualificationAiMessages, setQualificationAiMessages] = useState<
     { role: 'user' | 'ai'; text: string }[]
   >([]);
   const totalCustomersRef = useRef(0);
@@ -393,111 +400,93 @@ export default function Customer() {
     setAgents(agents);
   }
 
+  // ── Derive which param and which options array are active ─────────────────────
+  // Computed outside the effect so it can be used as a precise dependency.
+  const status = searchParams.get("Campaign");
+  const reference = searchParams.get("ReferenceId");
+  const leadtemperature = searchParams.get("LeadTemperature");
+
+  const activeParam = status
+    ? "Campaign"
+    : reference
+      ? "ReferenceId"
+      : leadtemperature
+        ? "LeadTemperature"
+        : null;
+
+  const relevantOptions = activeParam ? fieldOptions?.[activeParam] : null;
+
+
+  // ── Effect 1: Mount-only ──────────────────────────────────────────────────────
   useEffect(() => {
-    const status = searchParams.get("Campaign");
-    const reference = searchParams.get("ReferenceId");
-    const leadtemperature = searchParams.get("LeadTemperature");
-    if (!fieldOptions?.Campaign?.length) return;
-    if (!fieldOptions?.ReferenceId?.length) return;
-    if (!fieldOptions?.LeadTemperature?.length) return;
-
-    if (status) {
-
-      const campaignObj = fieldOptions?.Campaign?.find(
-        (c) => c.Name === status
-      );
-      // Auto set filter
-      setFilters((prev) => ({
-        ...prev,
-        StatusAssign: [status],
-      }));
-      setDependent((prev) => ({
-        ...prev,
-        Campaign: { id: campaignObj?._id, name: campaignObj?.Name }
-      }))
-
-      const updatedFilters = {
-        ...filters,
-        Campaign: [status],
-      };
-
-      setCustomerTableLoader(false);
-
-      // Fetch filtered data
-      handleSelectChange("Campaign", status, updatedFilters);
-    }
-    else if (reference) {
-
-      const referenceObj = fieldOptions?.ReferenceId?.find(
-        (c) => c.Name === reference
-      );
-      // Auto set filter
-      setFilters((prev) => ({
-        ...prev,
-        ReferenceId: [reference],
-      }));
-      setDependent((prev) => ({
-        ...prev,
-        ReferenceId: { id: referenceObj?._id, name: referenceObj?.Name }
-      }))
-
-      const updatedFilters = {
-        ...filters,
-        ReferenceId: [reference],
-      };
-
-      setCustomerTableLoader(false);
-
-      // Fetch filtered data
-      handleSelectChange("ReferenceId", reference, updatedFilters);
-    }
-    else if (leadtemperature) {
-
-      const leadtemperatureObj = fieldOptions?.LeadTemperature?.find(
-        (c) => c.Name === leadtemperature
-      );
-      // Auto set filter
-      setFilters((prev) => ({
-        ...prev,
-        LeadTemperature: [leadtemperature],
-      }));
-      setDependent((prev) => ({
-        ...prev,
-        LeadTemperature: { id: leadtemperatureObj?._id, name: leadtemperatureObj?.Name }
-      }))
-
-      const updatedFilters = {
-        ...filters,
-        LeadTemperature: [leadtemperature],
-      };
-
-      setCustomerTableLoader(false);
-
-      // Fetch filtered data
-      handleSelectChange("LeadTemperature", leadtemperature, updatedFilters);
-    }
-    else {
-      getCustomers();
-      fetchFields();
-      getTotalCustomerPage();
-    }
     fetchAiAgents();
     fetchTodayCustomer();
+    fetchcalllogs();
     audioRef.current = new Audio(
       "https://res.cloudinary.com/dsyzuwice/video/upload/v1774423860/voicepop_ypkmtz.mp3"
     );
 
-    fetchcalllogs();
+    if (!activeParam) {
+      getCustomers();
+      getTotalCustomerPage();
+    }
 
-  }, [searchParams, fieldOptions.Campaign, fieldOptions.ReferenceId]);
+    fetchFields();
+  }, []);
 
-  const fetchcalllogs = async ()=>{
+
+  // ── Effect 2: Fires only when the ONE relevant options array changes ───────────
+  // Because `relevantOptions` points to only Campaign OR ReferenceId OR
+  // LeadTemperature — not all three — this effect runs exactly once when
+  // the needed options load. Other arrays loading won't trigger it.
+  useEffect(() => {
+    if (!activeParam || !relevantOptions?.length) return;
+
+    if (status) {
+      const campaignObj = fieldOptions?.Campaign?.find((c) => c.Name === status);
+      setFilters((prev) => ({ ...prev, StatusAssign: [status] }));
+      setDependent((prev) => ({
+        ...prev,
+        Campaign: { id: campaignObj?._id, name: campaignObj?.Name },
+      }));
+      setCustomerTableLoader(false);
+      handleSelectChange("Campaign", status, { ...filters, Campaign: [status] });
+
+    } else if (reference) {
+      const referenceObj = fieldOptions?.ReferenceId?.find((c) => c.Name === reference);
+      setFilters((prev) => ({ ...prev, ReferenceId: [reference] }));
+      setDependent((prev) => ({
+        ...prev,
+        ReferenceId: { id: referenceObj?._id, name: referenceObj?.Name },
+      }));
+      setCustomerTableLoader(false);
+      handleSelectChange("ReferenceId", reference, { ...filters, ReferenceId: [reference] });
+
+    } else if (leadtemperature) {
+      const leadtemperatureObj = fieldOptions?.LeadTemperature?.find(
+        (c) => c.Name === leadtemperature
+      );
+      setFilters((prev) => ({ ...prev, LeadTemperature: [leadtemperature] }));
+      setDependent((prev) => ({
+        ...prev,
+        LeadTemperature: { id: leadtemperatureObj?._id, name: leadtemperatureObj?.Name },
+      }));
+      setCustomerTableLoader(false);
+      handleSelectChange("LeadTemperature", leadtemperature, {
+        ...filters,
+        LeadTemperature: [leadtemperature],
+      });
+    }
+
+  }, [searchParams, relevantOptions]); // only the ONE array that matters
+
+  const fetchcalllogs = async () => {
     const res = await getCallReport();
 
     const res2 = await getCallLogs();
 
-    console.log("call data", res );
-    console.log("call logs", res2 );
+    console.log("call data", res);
+    console.log("call logs", res2);
   }
 
 
@@ -1116,7 +1105,8 @@ export default function Customer() {
         whatsapptemplates.map((item: any): whatsappGetDataInterface => ({
           _id: item?._id ?? "",
           name: item?.name ?? "",
-          body: item?.body ?? ""
+          body: item?.body ?? "",
+          image: item?.whatsappImage[0] ?? "",
         }))
       );
 
@@ -1606,7 +1596,7 @@ export default function Customer() {
     };
   };
 
-  const handleAgentCalling = async (id:string)=>{
+  const handleAgentCalling = async (id: string) => {
 
     const payload = {
       customerId: id
@@ -1616,10 +1606,10 @@ export default function Customer() {
 
     console.log(" response is here ", res);
 
-     if(res){
+    if (res) {
       toast.success("call initiated successfully");
       return;
-     }
+    }
   }
 
 
@@ -1736,19 +1726,31 @@ export default function Customer() {
   };
 
   const AGENTS_TYPE_ICON: Record<string, any> = {
-      Outreach: <Sparkles />,
-      Analytics: <Zap />,
-      Calling: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335521/img-6_mky5rb.png" alt="Calling" className=" object-contain w-10 h-10" />,
-      Research: <img src="/icons/research.png" alt="Research" />,
-      Automation: <img src="/icons/automation.png" alt="Automation" />,
-      Followup: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335523/img-7_xjwzbl.png" alt="Followup" className=" object-contain w-10 h-10" />,
-      Matching: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335520/img-2_l1xdll.png" alt="Matching" className="object-contain w-10 h-10" />,
-      Qualification: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335520/img-1_nz99v7.png" alt="Qualification" className=" object-contain w-10 h-10" />,
-      default: "AG",
+    Outreach: <Sparkles />,
+    Analytics: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335552/img-8_twulvb.png" alt="Analytics" className=" object-contain w-10 h-10" />,
+    Calling: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335521/img-6_mky5rb.png" alt="Calling" className=" object-contain w-10 h-10" />,
+    Research: <img src="/icons/research.png" alt="Research" />,
+    Automation: <img src="/icons/automation.png" alt="Automation" />,
+    Followup: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335523/img-7_xjwzbl.png" alt="Followup" className=" object-contain w-10 h-10" />,
+    Matching: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335520/img-2_l1xdll.png" alt="Matching" className="object-contain w-10 h-10" />,
+    Qualification: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335520/img-1_nz99v7.png" alt="Qualification" className=" object-contain w-10 h-10" />,
+    Recommendation: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335520/img-3_scja92.png" alt="Recommendation" className=" object-contain w-10 h-10" />,
+    Mining: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335520/img-3_scja92.png" alt="Mining" className=" object-contain w-10 h-10" />,
+    Social: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335521/img-4_damgxf.png" alt="Social" className=" object-contain w-10 h-10" />,
+    default: "AG",
   };
+
+  const closeDeal = async (id: string) => {
+    const response = await closeCustomerDeal(id);
+    if (response) {
+      toast.success("Deal closed successfully");
+    }
+  };
+
 
   return (
     <ProtectedRoute>
+
       {/* whatsapp all popup */}
       <Toaster position="top-right" />
       {isWhatsappAllOpen && selectedCustomers.length > 0 && (
@@ -1796,7 +1798,7 @@ export default function Customer() {
 
 
 
-     
+
 
       {/* today customer dialogue */}
       <TodayCustomerDialog
@@ -1813,8 +1815,8 @@ export default function Customer() {
             ContactNumber: item.ContactNumber,
           });
         }}
-        onEdit={(item)=>{
-           handleEditClick(item._id)
+        onEdit={(item) => {
+          handleEditClick(item._id)
         }}
         onDeleteAll={(ids) => {
           setSelectedCustomers(ids);
@@ -1875,8 +1877,8 @@ export default function Customer() {
         )}
       />
 
-      
- <CustomerEditDialog
+
+      <CustomerEditDialog
         isOpen={isEditOpen}
         customerId={customerToEdit}
         onClose={() => {
@@ -2133,6 +2135,7 @@ export default function Customer() {
                     </div>
                   )}
                 </button>
+
 
                 {/* WARM */}
                 <button
@@ -2561,6 +2564,45 @@ export default function Customer() {
             setIsTableDialogOpen(true);
             handleTableDialogData(contactNumber);
           }}
+          renderActions={(item) => (
+            <div className=" flex justify-between w-full">
+
+              <Button
+                className=" bg-gray-500"
+                sx={{ backgroundColor: item.isChecked ? "#E8F5E9" : "#FFF0F5", color: item.isChecked ? "var(--color-primary)" : "#E91E63", minWidth: "32px", minHeight: "35px", borderRadius: "100%" }}
+                onClick={() =>
+                  handleChecked({ id: item._id, isChecked: item.isChecked })
+                }
+              >
+                {item.isChecked ? <IoCheckmarkDoneOutline size={20} /> : <IoCheckmark size={20} />}
+              </Button>
+
+              <Button
+                sx={{
+                  backgroundColor: temperatureConfig[item.LeadTemperature || "cold"]?.bg,
+                  color: temperatureConfig[item.LeadTemperature || "cold"]?.color,
+                  minWidth: "32px",
+                  height: "35px",
+                  borderRadius: "100%",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    filter: "brightness(0.95)",
+                    transform: "scale(1.05)"
+                  }
+                }}
+                onClick={() => {
+                  setTemperatureDialogData({
+                    id: item._id,
+                    name: item.CustomerName,
+                    current: item.LeadTemperature || "cold"
+                  });
+                  setIsTemperatureDialogOpen(true);
+                }}
+              >
+                {temperatureConfig[item.LeadTemperature || "cold"]?.icon}
+              </Button>
+            </div>
+          )}
         />
 
 
@@ -2667,485 +2709,360 @@ export default function Customer() {
 
 
           <div className="mb-4 mx-4 flex justify-between items-center">
-            <button
-              onClick={handleOpenTodayCustomers}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--color-primary)]/25 bg-[var(--color-primary)]/8 dark:bg-[var(--color-primary)]/12 text-[var(--color-primary)] text-[13px] font-semibold transition-all duration-150 hover:bg-[var(--color-primary)]/15 hover:border-[var(--color-primary)]/40 active:scale-[0.97] cursor-pointer"
-            >
-              <HiCalendar size={14} className="opacity-80" />
-              Today
-              {todaycustomerData?.length > 0 && (
-                <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[var(--color-primary)] text-white text-[10px] font-bold leading-none">
-                  {todaycustomerData.length}
-                </span>
-              )}
-            </button>
+            <div className=" flex justify-center items-center gap-3">
+              <button
+                onClick={handleOpenTodayCustomers}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--color-primary)]/25 bg-[var(--color-primary)]/8 dark:bg-[var(--color-primary)]/12 text-[var(--color-primary)] text-[13px] font-semibold transition-all duration-150 hover:bg-[var(--color-primary)]/15 hover:border-[var(--color-primary)]/40 active:scale-[0.97] cursor-pointer"
+              >
+                <HiCalendar size={14} className="opacity-80" />
+                Today
+                {todaycustomerData?.length > 0 && (
+                  <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[var(--color-primary)] text-white text-[10px] font-bold leading-none">
+                    {todaycustomerData.length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => router.push("/customer/closed-deals")}
+                className="flex items-center cursor-pointer gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] transition-colors shadow-sm"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+                Closed Deals
+              </button>
+            </div>
+
+
             <AIAgentDropdown
               agents={agents}
               setSelectedAgent={setSelectedAgent}
               setIsAIAgentDialogOpen={setIsAIAgentDialogOpen}
             />
           </div>
-          
+
           <BottomPopup onClose={() => setIsAIAgentDialogOpen(false)} isOpen={isAIAgentsDialogOpen}>
+            {({ isMaximized, toggleMaximize }) => (
+              <div className={` flex flex-row relative overflow-hidden ${isMaximized ? "" : "rounded-t-2xl"}  h-[100%] w-full `} style={{ background: "#ffffff" }}>
 
-            {/* ── Root: two-column layout (dark left rail + white workspace) ── */}
-            <div className="flex flex-row relative overflow-hidden rounded-t-2xl h-[100%] w-full" style={{ background: "#ffffff" }}>
+                {/* LEFT DARK SIDEBAR */}
+                {
+                  !isMaximized && <AIAgentSidebar
+                    selectedAgent={selectedAgent}
+                    AGENTS_TYPE_ICON={AGENTS_TYPE_ICON}
+                    onClose={() => setIsAIAgentDialogOpen(false)}
+                  />
+                }
 
-              {/* ════════════════════════════════════════════
-        LEFT DARK SIDEBAR
-    ════════════════════════════════════════════ */}
-              <div
-                className="w-[250px] flex-shrink-0  flex flex-col relative overflow-hidden"
-                style={{ background: "#0d1117", borderRight: "1px solid rgba(255,255,255,0.07)" }}
-              >
-                {/* Grid texture */}
-                <div
-                  className="absolute inset-0 pointer-events-none opacity-40"
-                  style={{
-                    backgroundImage:
-                      "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
-                    backgroundSize: "24px 24px",
-                  }}
-                />
-                {/* Top glow */}
-                <div
-                  className="absolute -top-10 -left-10 w-48 h-48 rounded-full pointer-events-none"
-                  style={{ background: "radial-gradient(circle, rgba(56,189,248,0.18) 0%, transparent 70%)" }}
-                />
 
-                {/* ── Agent identity ── */}
-                <div className="relative z-10 px-4 pt-5 pb-3">
-                  <div className="relative inline-block mb-3">
-                    <div
-                      className="w-11 h-11 rounded-[14px] flex items-center justify-center text-white text-[13px] font-semibold"
-                      style={{
-                        background: "linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)",
-                        boxShadow: "0 0 0 1px rgba(255,255,255,0.1), 0 4px 14px rgba(2,132,199,0.4)",
-                      }}
-                    >
-                      {/* {selectedAgent?.name?.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() ?? "AG"} */}
-                      {AGENTS_TYPE_ICON[selectedAgent?.type ?? "default"]}
-                    </div>
-                    <span
-                      className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
-                      style={{ background: "#10b981", borderColor: "#0d1117", boxShadow: "0 0 6px rgba(16,185,129,0.6)" }}
-                    />
-                  </div>
+                {/* RIGHT WORKSPACE */}
+                <div className="flex-1 flex flex-col pb-5 w-full overflow-hidden bg-white">
 
-                  <p className="text-[13px] font-semibold leading-tight" style={{ color: "#e6edf3" }}>
-                    {selectedAgent?.name ?? "AI Genie Agent"}
-                  </p>
-                  <p className="text-[10px] mt-0.5 font-mono" style={{ color: "#8b949e" }}>
-                    {selectedAgent?.type?.toLowerCase() ?? "matching"} · v2.1
-                  </p>
-
-                  {/* Badges */}
-                  <div className="flex flex-wrap gap-1 mt-2.5">
-                    {selectedAgent?.type && (
-                      <span
-                        className="text-[9px] font-mono font-medium px-1.5 py-0.5 rounded-full"
-                        style={{ color: "#38bdf8", background: "rgba(56,189,248,0.12)", border: "1px solid rgba(56,189,248,0.25)" }}
+                  {/* ── Top strip ── */}
+                  <div
+                    className="flex items-center justify-between relative px-5 flex-shrink-0 border-b"
+                    style={{ height: "44px", background: "#f8fafc", borderColor: "#e2e8f0" }}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: "#94a3b8" }}>
+                        Workspace
+                      </span>
+                      <div className="w-px h-3.5" style={{ background: "#e2e8f0" }} />
+                      {/* Live badge */}
+                      <div
+                        className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
+                        style={{
+                          background: aiLoading ? "rgba(56,189,248,0.1)" : "rgba(16,185,129,0.08)",
+                          border: `1px solid ${aiLoading ? "rgba(56,189,248,0.25)" : "rgba(16,185,129,0.2)"}`,
+                        }}
                       >
-                        {selectedAgent.type}
-                      </span>
-                    )}
-                    {selectedAgent?.campaign && (
-                      <span
-                        className="text-[9px] font-mono font-medium px-1.5 py-0.5 rounded-full"
-                        style={{ color: "#fbbf24", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.25)" }}
-                      >
-                        {selectedAgent.campaign}
-                      </span>
-                    )}
-                    {selectedAgent?.targetSegment && (
-                      <span
-                        className="text-[9px] font-mono font-medium px-1.5 py-0.5 rounded-full"
-                        style={{ color: "#34d399", background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.25)" }}
-                      >
-                        {selectedAgent.targetSegment}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Divider */}
-                <div className="mx-4 relative z-10" style={{ height: "1px", background: "rgba(255,255,255,0.07)" }} />
-
-                {/* ── Stats with progress bars ── */}
-                <div className="relative z-10 px-4 py-3 flex flex-col gap-2.5">
-                  {[
-                    { label: "Leads processed", val: "1,240", pct: 82 },
-                    { label: "Match accuracy", val: "84%", pct: 84 },
-                    { label: "Avg. response", val: "3.2s", pct: 55 },
-                  ].map((s) => (
-                    <div key={s.label}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px]" style={{ color: "#8b949e" }}>{s.label}</span>
-                        <span className="text-[11px] font-medium font-mono" style={{ color: "#e6edf3" }}>{s.val}</span>
-                      </div>
-                      <div className="h-[2px] rounded-full" style={{ background: "#21262d" }}>
-                        <div
-                          className="h-full rounded-full"
-                          style={{ width: `${s.pct}%`, background: "linear-gradient(90deg, #0ea5e9, #38bdf8)" }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Divider */}
-                <div className="mx-4 relative z-10" style={{ height: "1px", background: "rgba(255,255,255,0.07)" }} />
-
-                {/* ── Nav ── */}
-                <div className="relative z-10 flex-1 px-2.5 py-2 flex flex-col gap-0.5 overflow-y-auto">
-                  <p className="text-[9px] font-semibold uppercase tracking-widest px-1.5 py-1.5" style={{ color: "#8b949e" }}>
-                    Actions
-                  </p>
-
-                  {[
-                    {
-                      label: "Lead Search", count: 12, active: selectedAgent?.type === "Matching",
-                      icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><circle cx="7" cy="7" r="5" /><path d="M11 11l3 3" /></svg>
-                    },
-                    {
-                      label: "Follow-ups", count: 5, active: selectedAgent?.type === "Followup",
-                      icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><path d="M8 2v4l3 3M14 8A6 6 0 112 8a6 6 0 0112 0z" /></svg>
-                    },
-                    {
-                      label: "Reports", count: 3, active: false,
-                      icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><rect x="2" y="3" width="12" height="9" rx="1.5" /><path d="M5 12v1.5M11 12v1.5M5.5 6.5h5M5.5 9h3" /></svg>
-                    },
-                    {
-                      label: "Segments", count: null, active: false,
-                      icon: <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><circle cx="8" cy="5" r="2.5" /><path d="M3 13c0-2.76 2.24-5 5-5s5 2.24 5 5" /></svg>
-                    },
-                  ].map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex items-center gap-2 px-2 py-1.5 rounded-[8px] cursor-pointer"
-                      style={{
-                        background: item.active ? "rgba(56,189,248,0.1)" : "transparent",
-                        border: item.active ? "1px solid rgba(56,189,248,0.2)" : "1px solid transparent",
-                      }}
-                    >
-                      <span style={{ color: item.active ? "#38bdf8" : "#8b949e", opacity: item.active ? 1 : 0.7 }}>
-                        {item.icon}
-                      </span>
-                      <span className="text-[11px] font-medium flex-1" style={{ color: item.active ? "#38bdf8" : "#8b949e" }}>
-                        {item.label}
-                      </span>
-                      {item.count != null && (
                         <span
-                          className="text-[9px] font-mono px-1.5 py-0.5 rounded-full"
+                          className="w-1.5 h-1.5 rounded-full"
                           style={{
-                            background: item.active ? "rgba(56,189,248,0.15)" : "#21262d",
-                            color: item.active ? "#38bdf8" : "#8b949e",
+                            background: aiLoading ? "#38bdf8" : "#10b981",
+                            animation: aiLoading ? "pulse 1s infinite" : "none",
+                          }}
+                        />
+                        <span
+                          className="text-[9px] font-mono font-medium flex items-center gap-1"
+                          style={{ color: aiLoading ? "#0ea5e9" : "#10b981" }}
+                        >
+                          {currentStep || "Ready"}
+                          {aiLoading && <BeatLoader size={2} color="#0ea5e9" />}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Action buttons: maximize + close */}
+                    <div className="flex items-center gap-1 absolute top-2 right-2 z-50">
+
+                      {/* Maximize / Minimize button */}
+                      <button
+                        onClick={toggleMaximize}
+                        title={isMaximized ? "Minimize" : "Maximize"}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent text-[#94a3b8] hover:bg-[#e0f2fe] hover:text-[#0284c7] transition-all cursor-pointer"
+                      >
+                        {isMaximized ? (
+                          /* Minimize icon — two inward arrows */
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="4 14 10 14 10 20" />
+                            <polyline points="20 10 14 10 14 4" />
+                            <line x1="10" y1="14" x2="3" y2="21" />
+                            <line x1="21" y1="3" x2="14" y2="10" />
+                          </svg>
+                        ) : (
+                          /* Maximize icon — two outward arrows */
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="15 3 21 3 21 9" />
+                            <polyline points="9 21 3 21 3 15" />
+                            <line x1="21" y1="3" x2="14" y2="10" />
+                            <line x1="3" y1="21" x2="10" y2="14" />
+                          </svg>
+                        )}
+                      </button>
+
+                      {/* Close button */}
+                      <button
+                        onClick={() => setIsAIAgentDialogOpen(false)}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent text-[#94a3b8] hover:bg-[#fee2e2] hover:text-[#ef4444] transition-all cursor-pointer"
+                      >
+                        <IoMdClose size={18} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* ── MATCHING AGENT ── */}
+                  {selectedAgent && selectedAgent.type === "Matching" ? (
+                    <div className="flex flex-col overflow-hidden flex-1">
+
+                      {/* Chat messages — your existing AIChatMessages component, restyled */}
+                      <AIChatMessages
+                        agentName={selectedAgent.name}
+                        messages={messages}
+                        aiLoading={aiLoading}
+                        currentStep={currentStep}
+                        hints={[
+                          "High-value leads in Mumbai",
+                          "Active last 30 days",
+                          "Enterprise, no contact",
+                        ]}
+                        onHintClick={(hint) => setKeywordInput(hint)}
+                        maxHeight="100%"
+                      />
+
+                      {/* ── INPUT AREA ── */}
+                      <div
+                        className="flex-shrink-0 border-t px-4  pt-3"
+                        style={{ borderColor: "#e2e8f0", background: "#ffffff" }}
+                      >
+                        {/* Collapsible fields panel */}
+                        <div
+                          className="overflow-hidden transition-all duration-300"
+                          style={{
+                            maxHeight: toggleAiGenieSearchBy ? "160px" : "0",
+                            opacity: toggleAiGenieSearchBy ? 1 : 0,
+                            marginBottom: toggleAiGenieSearchBy ? "10px" : "0",
                           }}
                         >
-                          {item.count}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-
-                  <p className="text-[9px] font-semibold uppercase tracking-widest px-1.5 pt-3 pb-1.5" style={{ color: "#8b949e" }}>
-                    History
-                  </p>
-                  <div
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-[8px] cursor-pointer"
-                    style={{ border: "1px solid transparent" }}
-                  >
-                    <span style={{ color: "#8b949e", opacity: 0.7 }}>
-                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-                        <path d="M2 4h12M2 8h8M2 12h5" />
-                      </svg>
-                    </span>
-                    <span className="text-[11px]" style={{ color: "#8b949e" }}>Past searches</span>
-                  </div>
-                </div>
-
-                {/* ── Footer: status ── */}
-                <div
-                  className="relative z-10 flex items-center gap-2 px-4 py-3"
-                  style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
-                >
-                  <span
-                    className="w-1.5 h-1.5 rounded-full animate-pulse"
-                    style={{ background: "#10b981", boxShadow: "0 0 0 3px rgba(16,185,129,0.2)" }}
-                  />
-                  <span className="text-[10px] font-mono" style={{ color: "#8b949e" }}>Agent online</span>
-                </div>
-              </div>
-
-
-              {/* ════════════════════════════════════════════
-        RIGHT WORKSPACE
-    ════════════════════════════════════════════ */}
-              <div className="flex-1 flex flex-col pb-5 w-full overflow-hidden bg-white">
-
-                {/* ── Top strip: workspace label + live status + close ── */}
-                <div
-                  className="flex items-center justify-between px-5 flex-shrink-0 border-b"
-                  style={{ height: "44px", background: "#f8fafc", borderColor: "#e2e8f0" }}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: "#94a3b8" }}>
-                      Workspace
-                    </span>
-                    <div className="w-px h-3.5" style={{ background: "#e2e8f0" }} />
-                    {/* Live badge */}
-                    <div
-                      className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
-                      style={{
-                        background: aiLoading ? "rgba(56,189,248,0.1)" : "rgba(16,185,129,0.08)",
-                        border: `1px solid ${aiLoading ? "rgba(56,189,248,0.25)" : "rgba(16,185,129,0.2)"}`,
-                      }}
-                    >
-                      <span
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{
-                          background: aiLoading ? "#38bdf8" : "#10b981",
-                          animation: aiLoading ? "pulse 1s infinite" : "none",
-                        }}
-                      />
-                      <span
-                        className="text-[9px] font-mono font-medium flex items-center gap-1"
-                        style={{ color: aiLoading ? "#0ea5e9" : "#10b981" }}
-                      >
-                        {currentStep || "Ready"}
-                        {aiLoading && <BeatLoader size={2} color="#0ea5e9" />}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Close button */}
-                  <button
-                    onClick={() => setIsAIAgentDialogOpen(false)}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg transition-all cursor-pointer"
-                    style={{ color: "#94a3b8" }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.background = "#fee2e2";
-                      (e.currentTarget as HTMLElement).style.color = "#ef4444";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.background = "transparent";
-                      (e.currentTarget as HTMLElement).style.color = "#94a3b8";
-                    }}
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* ── MATCHING AGENT ── */}
-                {selectedAgent && selectedAgent.type === "Matching" ? (
-                  <div className="flex flex-col overflow-hidden flex-1">
-
-                    {/* Chat messages — your existing AIChatMessages component, restyled */}
-                    <AIChatMessages
-                      agentName={selectedAgent.name}
-                      messages={messages}
-                      aiLoading={aiLoading}
-                      currentStep={currentStep}
-                      hints={[
-                        "High-value leads in Mumbai",
-                        "Active last 30 days",
-                        "Enterprise, no contact",
-                      ]}
-                      onHintClick={(hint) => setKeywordInput(hint)}
-                      maxHeight="100%"
-                    />
-
-                    {/* ── INPUT AREA ── */}
-                    <div
-                      className="flex-shrink-0 border-t px-4  pt-3"
-                      style={{ borderColor: "#e2e8f0", background: "#ffffff" }}
-                    >
-                      {/* Collapsible fields panel */}
-                      <div
-                        className="overflow-hidden transition-all duration-300"
-                        style={{
-                          maxHeight: toggleAiGenieSearchBy ? "160px" : "0",
-                          opacity: toggleAiGenieSearchBy ? 1 : 0,
-                          marginBottom: toggleAiGenieSearchBy ? "10px" : "0",
-                        }}
-                      >
-                        <div
-                          className="rounded-[14px] p-3 border"
-                          style={{ background: "#f8fafc", borderColor: "#e2e8f0" }}
-                        >
-                          <p className="text-[9px] font-semibold uppercase tracking-widest mb-2" style={{ color: "#94a3b8" }}>
-                            Search in fields
-                          </p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {SEARCH_FIELDS.filter(f => !filters.SearchIn.includes(f)).map((field) => (
-                              <button
-                                key={field}
-                                type="button"
-                                onClick={() => setFilters(prev => ({ ...prev, SearchIn: [...prev.SearchIn, field] }))}
-                                className="text-[10.5px] font-medium px-2 py-1 rounded-lg border transition-all"
-                                style={{ borderColor: "#e2e8f0", background: "#ffffff", color: "#64748b" }}
-                              >
-                                {field.toLowerCase()}
-                              </button>
-                            ))}
-                          </div>
-                          {filters.SearchIn.length > 0 && (
-                            <div className="mt-2 pt-2 border-t" style={{ borderColor: "#e2e8f0" }}>
-                              <p className="text-[9px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#94a3b8" }}>
-                                Active
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {filters.SearchIn.map((field) => (
-                                  <div
-                                    key={field}
-                                    className="flex items-center gap-1 text-[10.5px] font-medium px-2 py-1 rounded-lg"
-                                    style={{ background: "#e0f2fe", color: "#0284c7", border: "1px solid #bae6fd" }}
-                                  >
-                                    {field.toLowerCase()}
-                                    <button
-                                      type="button"
-                                      onClick={() => setFilters(prev => ({ ...prev, SearchIn: prev.SearchIn.filter(f => f !== field) }))}
-                                      className="leading-none ml-0.5 opacity-60 hover:opacity-100 transition-opacity"
-                                    >
-                                      ✕
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
+                          <div
+                            className="rounded-[14px] p-3 border"
+                            style={{ background: "#f8fafc", borderColor: "#e2e8f0" }}
+                          >
+                            <p className="text-[9px] font-semibold uppercase tracking-widest mb-2" style={{ color: "#94a3b8" }}>
+                              Search in fields
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {SEARCH_FIELDS.filter(f => !filters.SearchIn.includes(f)).map((field) => (
+                                <button
+                                  key={field}
+                                  type="button"
+                                  onClick={() => setFilters(prev => ({ ...prev, SearchIn: [...prev.SearchIn, field] }))}
+                                  className="text-[10.5px] font-medium px-2 py-1 rounded-lg border transition-all"
+                                  style={{ borderColor: "#e2e8f0", background: "#ffffff", color: "#64748b" }}
+                                >
+                                  {field.toLowerCase()}
+                                </button>
+                              ))}
                             </div>
-                          )}
+                            {filters.SearchIn.length > 0 && (
+                              <div className="mt-2 pt-2 border-t" style={{ borderColor: "#e2e8f0" }}>
+                                <p className="text-[9px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: "#94a3b8" }}>
+                                  Active
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {filters.SearchIn.map((field) => (
+                                    <div
+                                      key={field}
+                                      className="flex items-center gap-1 text-[10.5px] font-medium px-2 py-1 rounded-lg"
+                                      style={{ background: "#e0f2fe", color: "#0284c7", border: "1px solid #bae6fd" }}
+                                    >
+                                      {field.toLowerCase()}
+                                      <button
+                                        type="button"
+                                        onClick={() => setFilters(prev => ({ ...prev, SearchIn: prev.SearchIn.filter(f => f !== field) }))}
+                                        className="leading-none ml-0.5 opacity-60 hover:opacity-100 transition-opacity"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Textarea + send */}
-                      <div
-                        className={`flex items-end gap-2 rounded-2xl px-3.5 pt-2.5 pb-2 transition-all duration-200 border-[1.5px] ${aiLoading
-                          ? "border-sky-200"
-                          : "border-slate-200 focus-within:border-sky-300 focus-within:shadow-[0_0_0_3px_rgba(125,211,252,0.12)]"
-                          }`}
-                        style={{ background: "#ffffff" }}
-                      >
-                        <div className="flex-1">
-                          <textarea
-                            rows={2}
-                            placeholder="Describe the leads you're looking for…"
-                            className="w-full resize-none bg-transparent outline-none leading-relaxed disabled:opacity-40"
-                            style={{ fontSize: "12.5px", color: "#0f172a" }}
-                            value={keywordInput}
-                            disabled={aiLoading}
-                            onChange={(e) => setKeywordInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && !e.shiftKey) {
-                                e.preventDefault();
-                                if (keywordInput.trim() && !aiLoading) {
-                                  setAiLoading(true);
-                                  setCurrentStep(STEPS.SEARCH);
-                                  handleSend();
+                        {/* Textarea + send */}
+                        <div
+                          className={`flex items-end gap-2 rounded-2xl px-3.5 pt-2.5 pb-2 transition-all duration-200 border-[1.5px] ${aiLoading
+                            ? "border-sky-200"
+                            : "border-slate-200 focus-within:border-sky-300 focus-within:shadow-[0_0_0_3px_rgba(125,211,252,0.12)]"
+                            }`}
+                          style={{ background: "#ffffff" }}
+                        >
+                          <div className="flex-1">
+                            <textarea
+                              rows={2}
+                              placeholder="Describe the leads you're looking for…"
+                              className="w-full resize-none bg-transparent outline-none leading-relaxed disabled:opacity-40"
+                              style={{ fontSize: "12.5px", color: "#0f172a" }}
+                              value={keywordInput}
+                              disabled={aiLoading}
+                              onChange={(e) => setKeywordInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  if (keywordInput.trim() && !aiLoading) {
+                                    setAiLoading(true);
+                                    setCurrentStep(STEPS.SEARCH);
+                                    handleSend();
+                                  }
                                 }
+                              }}
+                            />
+                            <div className="flex items-center justify-between mt-1 pt-1.5 border-t" style={{ borderColor: "#f1f5f9" }}>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  disabled={aiLoading}
+                                  onClick={() => setToggleAiGenieSearchBy(!toggleAiGenieSearchBy)}
+                                  className="flex items-center gap-1 text-[10px] font-medium transition-colors disabled:opacity-40"
+                                  style={{ color: "#94a3b8" }}
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M7 8h10M11 12h4" />
+                                  </svg>
+                                  Fields {toggleAiGenieSearchBy ? "▴" : "▾"}
+                                  {filters.SearchIn.length > 0 && (
+                                    <span
+                                      className="ml-1 rounded-full px-1.5 text-[8.5px] font-bold"
+                                      style={{ background: "#e0f2fe", color: "#0284c7" }}
+                                    >
+                                      {filters.SearchIn.length}
+                                    </span>
+                                  )}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={clearFilter}
+                                  disabled={aiLoading}
+                                  className="text-[10px] transition-colors disabled:opacity-40 hover:text-rose-500"
+                                  style={{ color: "#94a3b8" }}
+                                >
+                                  Clear
+                                </button>
+                              </div>
+                              <span className="text-[9.5px] font-mono" style={{ color: "#cbd5e1" }}>↵ to send</span>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={aiLoading || !keywordInput.trim()}
+                            onClick={() => {
+                              if (keywordInput.trim() && !aiLoading) {
+                                setAiLoading(true);
+                                setCurrentStep(STEPS.SEARCH);
+                                handleSend();
                               }
                             }}
-                          />
-                          <div className="flex items-center justify-between mt-1 pt-1.5 border-t" style={{ borderColor: "#f1f5f9" }}>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                disabled={aiLoading}
-                                onClick={() => setToggleAiGenieSearchBy(!toggleAiGenieSearchBy)}
-                                className="flex items-center gap-1 text-[10px] font-medium transition-colors disabled:opacity-40"
-                                style={{ color: "#94a3b8" }}
-                              >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M7 8h10M11 12h4" />
-                                </svg>
-                                Fields {toggleAiGenieSearchBy ? "▴" : "▾"}
-                                {filters.SearchIn.length > 0 && (
-                                  <span
-                                    className="ml-1 rounded-full px-1.5 text-[8.5px] font-bold"
-                                    style={{ background: "#e0f2fe", color: "#0284c7" }}
-                                  >
-                                    {filters.SearchIn.length}
-                                  </span>
-                                )}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={clearFilter}
-                                disabled={aiLoading}
-                                className="text-[10px] transition-colors disabled:opacity-40 hover:text-rose-500"
-                                style={{ color: "#94a3b8" }}
-                              >
-                                Clear
-                              </button>
-                            </div>
-                            <span className="text-[9.5px] font-mono" style={{ color: "#cbd5e1" }}>↵ to send</span>
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          disabled={aiLoading || !keywordInput.trim()}
-                          onClick={() => {
-                            if (keywordInput.trim() && !aiLoading) {
-                              setAiLoading(true);
-                              setCurrentStep(STEPS.SEARCH);
-                              handleSend();
+                            className="w-9 h-9 mb-1 rounded-[11px] flex items-center justify-center text-white transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 active:scale-95 hover:brightness-110"
+                            style={{ background: "#0284c7", boxShadow: "0 2px 8px rgba(2,132,199,0.3)" }}
+                          >
+                            {aiLoading
+                              ? <BounceLoader loading color="#fff" size={10} />
+                              : <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                              </svg>
                             }
-                          }}
-                          className="w-9 h-9 mb-1 rounded-[11px] flex items-center justify-center text-white transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 active:scale-95 hover:brightness-110"
-                          style={{ background: "#0284c7", boxShadow: "0 2px 8px rgba(2,132,199,0.3)" }}
-                        >
-                          {aiLoading
-                            ? <BounceLoader loading color="#fff" size={10} />
-                            : <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
-                              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                            </svg>
-                          }
-                        </button>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  /* ── FOLLOWUP AGENT ── */
-                ) : selectedAgent && selectedAgent.type === "Followup" ? (
-                  <div className="flex-1 overflow-y-auto px-6 py-4">
-                    <FollowupAgentWorkspace data={selectedAgent} />
-                  </div>
-
-                  /* ── Qualification STATE ── */
-                ): selectedAgent && selectedAgent.type === "Qualification" ? (
-                  <div className="flex-1 overflow-y-auto px-6 py-4">
-                    <QualificationAgentWorkspace/>
-                  </div>
-
-                  /* ── CALLING STATE ── */
-                ): selectedAgent && selectedAgent.type === "Calling" ? (
-                  <div className="flex-1 overflow-y-auto px-6">
-                    <CallingAgentWorkspace/>
-                  </div>
-                ): selectedAgent && selectedAgent.type === "Followup" ? (
-                  <div className="flex-1 overflow-y-auto px-6 py-4">
-                    <FollowupAgentWorkspace data={selectedAgent} />
-                  </div>
-
-                  /* ── Qualification STATE ── */
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center py-16 text-center px-6">
-                    <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-                      style={{ background: "#fff1f2" }}
-                    >
-                      <span className="text-xl" style={{ color: "#f43f5e" }}>!</span>
+                    /* ── FOLLOWUP AGENT ── */
+                  ) : selectedAgent && selectedAgent.type === "Followup" ? (
+                    <div className="flex-1 overflow-y-auto px-6 py-4">
+                      <FollowupAgentWorkspace data={selectedAgent} />
                     </div>
-                    <p className="text-[14px] font-semibold" style={{ color: "#334155" }}>Something went wrong</p>
-                    <p className="text-[12px] mt-1" style={{ color: "#94a3b8" }}>Please try again later</p>
-                  </div>
-                )}
 
-              </div>{/* end right panel */}
-            </div>{/* end two-column root */}
+                    /* ── Qualification STATE ── */
+                  ) : selectedAgent && selectedAgent.type === "Qualification" ? (
+                    <div className="flex-1 overflow-hidden px-6 py-4">
+                      <QualificationAgentWorkspace isOpen={isAIAgentsDialogOpen} />
+                    </div>
 
+                    /* ── RECOMMEND CUSTOMER STATE ── */
+                  ) : selectedAgent && selectedAgent.type === "Recommendation" ? (
+                    <div className="flex-1 overflow-hidden px-6 py-4">
+                      <RecommendAgentWorkspace isOpen={isAIAgentsDialogOpen} />
+                    </div>
+
+                    /* ── CALLING STATE ── */
+                  ) : selectedAgent && selectedAgent.type === "Calling" ? (
+                    <div className="flex-1 overflow-y-auto px-6">
+                      <CallingAgentWorkspace isOpen={isAIAgentsDialogOpen} />
+                    </div>
+                  ) : selectedAgent && selectedAgent.type === "Followup" ? (
+                    <div className="flex-1 overflow-y-auto px-6 py-4">
+                      <FollowupAgentWorkspace data={selectedAgent} />
+                    </div>
+
+                    /* ── Data Mining STATE ── */
+                  ) : selectedAgent && selectedAgent.type === "Mining" ? (
+                    <div className="flex-1 overflow-hidden ">
+                      <SocialMiningAgentWorkspace isOpen={isAIAgentsDialogOpen} />
+                    </div>
+
+                    /* ── Error STATE ── */
+                  ) : selectedAgent && selectedAgent.type === "Social" ? (
+                    <div className="flex-1 overflow-hidden ">
+                      <SocialAgentWorkspace isOpen={isAIAgentsDialogOpen} />
+                    </div>
+
+                    /* ── Error STATE ── */
+                  ) : selectedAgent && selectedAgent.type === "Analytics" ? (
+                    <div className="flex-1 overflow-hidden px-6 py-4">
+                      <AnalyticsAgentWorkspace isOpen={isAIAgentsDialogOpen} />
+                    </div>
+
+                    /* ── Error STATE ── */
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center py-16 text-center px-6">
+                      <div
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+                        style={{ background: "#fff1f2" }}
+                      >
+                        <span className="text-xl" style={{ color: "#f43f5e" }}>!</span>
+                      </div>
+                      <p className="text-[14px] font-semibold" style={{ color: "#334155" }}>Something went wrong</p>
+                      <p className="text-[12px] mt-1" style={{ color: "#94a3b8" }}>Please try again later</p>
+                    </div>
+                  )}
+
+                </div>
+              </div>
+            )}
           </BottomPopup>
 
           {/* TABLE */}
@@ -3775,7 +3692,7 @@ export default function Customer() {
                                       <>
                                         {item.ContactNumber && (
                                           <>
-                                            <div className=" text-center" onClick={()=>handleAgentCalling(item._id)}>{item.ContactNumber}</div>
+                                            <div className=" text-center" onClick={() => handleAgentCalling(item._id)}>{item.ContactNumber}</div>
                                             <span className="flex">
                                               <Button
                                                 component="a"
@@ -3959,6 +3876,46 @@ export default function Customer() {
                                           }}
                                         >
                                           {temperatureConfig[item.LeadTemperature || "cold"]?.icon}
+                                        </Button>
+                                        <Button
+                                          onClick={() => {
+                                            router.push(`/customer/${item._id}`)
+                                          }}
+                                          sx={{
+                                            backgroundColor: "#E8F5E9",
+                                            color: "var(--color-primary)",
+                                            minWidth: "32px",
+                                            height: "32px",
+                                            borderRadius: "8px",
+                                            transition: "all 0.2s ease",
+                                            "&:hover": {
+                                              filter: "brightness(0.95)",
+                                              transform: "scale(1.05)"
+                                            }
+                                          }}
+
+                                        >
+                                          <FaEye size={12} />
+                                        </Button>
+                                        <Button
+                                          onClick={() => {
+                                            closeDeal(item._id);
+                                          }}
+                                          sx={{
+                                            backgroundColor: "#E8F5E9",
+                                            color: "var(--color-primary)",
+                                            minWidth: "32px",
+                                            height: "32px",
+                                            borderRadius: "8px",
+                                            transition: "all 0.2s ease",
+                                            "&:hover": {
+                                              filter: "brightness(0.95)",
+                                              transform: "scale(1.05)"
+                                            }
+                                          }}
+
+                                        >
+                                          <FaHandshakeSimple size={12} />
                                         </Button>
                                       </div>
                                     );

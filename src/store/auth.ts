@@ -75,6 +75,24 @@ export const checkAuthAdmin = async (): Promise<AuthApiResponse> => {
   }
 };
 
+export const loginDev = async (loginData: LoginCredentials): Promise<AuthApiResponse> => {
+  try {
+    const res = await fetch(API_ROUTES.ADMIN.DEVLOGIN, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(loginData),
+    });
+
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data: AuthApiResponse = await res.json();
+    return data;
+  } catch (error) {
+    console.error("SERVER ERROR (Login): ", error);
+    return { success: false, message: "Login failed" };
+  }
+};
+
 // 👤 ADMIN MANAGEMENT
 export const createAdmin = async (adminData: CreateAdminData): Promise<AuthApiResponse> => {
   try {
@@ -155,6 +173,7 @@ export const updateAdminDetails = async (id: string, updatedData: Partial<Admin>
       company: updatedData.Company,
       AddressLine1: updatedData.AddressLine1,
       AddressLine2: updatedData.AddressLine2,
+      status: updatedData.Status
     };
     const res = await fetch(API_ROUTES.ADMIN.UPDATE_DETAILS(id), {
       method: "PUT",

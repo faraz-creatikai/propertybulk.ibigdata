@@ -28,14 +28,16 @@ const ICONS = [Bot, Sparkles, Zap, Bot, Sparkles];
 
 const TYPE_ICON: Record<string, any> = {
     Outreach: <Sparkles />,
-    Analytics: <Zap />,
-    Support: "🎧",
+     Analytics: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335552/img-8_twulvb.png" alt="Analytics" className=" object-contain w-10 h-10" />,
+    Recommendation: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335520/img-3_scja92.png" alt="Recommendation" className=" object-contain w-10 h-10" />,
     Research: <img src="/icons/research.png" alt="Research" />,
     Automation: <img src="/icons/automation.png" alt="Automation" />,
     Calling: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335521/img-6_mky5rb.png" alt="Calling" className=" object-contain w-10 h-10" />,
     Followup: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335523/img-7_xjwzbl.png" alt="Followup" className=" object-contain w-10 h-10" />,
     Matching: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335520/img-2_l1xdll.png" alt="Matching" className="object-contain w-10 h-10" />,
     Qualification: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335520/img-1_nz99v7.png" alt="Qualification" className=" object-contain w-10 h-10" />,
+    Mining: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335552/img-8_twulvb.png" alt="Mining" className=" object-contain w-10 h-10" />,
+        Social: <img src="https://res.cloudinary.com/djipgt6vc/image/upload/v1774335521/img-4_damgxf.png" alt="Social" className=" object-contain w-10 h-10" />,
 };
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
@@ -45,6 +47,10 @@ const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
     Research: { bg: "bg-rose-50", text: "text-rose-700" },
     Automation: { bg: "bg-violet-50", text: "text-violet-700" },
     Calling: { bg: "bg-violet-50", text: "text-violet-700" },
+    Recommendation: { bg: "bg-sky-50", text: "text-sky-700" },
+    Mining: { bg: "bg-fuchsia-50", text: "text-fuchsia-700" },
+    Analytics: { bg: "bg-fuchsia-50", text: "text-fuchsia-700" },
+    Social: { bg: "bg-rose-50", text: "text-rose-700" },
     _default: { bg: "bg-gray-50", text: "text-gray-600" },
 };
 

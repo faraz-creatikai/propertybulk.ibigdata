@@ -6,7 +6,7 @@ export const BASE_URL = "https://apipropertybulk.ibigdata.in/api";
 //https://apiwbh.ibigdata.in
 //https://apiproperty.ibigdata.in
 //https://apitravel.ibigdata.in
-//https://apiairbnb.ibigdata.in
+//https://appapi.estateai.in
 
 export const API_ROUTES = {
   CONTACT: {
@@ -36,9 +36,17 @@ export const API_ROUTES = {
     CUSTOMEREXCELHEADERS: `${BASE_URL}/customer/import/headers`,
     ASSIGNCUSTOMER: `${BASE_URL}/customer/assign`,
     QUALIFYCUSTOMER: `${BASE_URL}/customer/qualification-agent`,
+    DATAMINING: `${BASE_URL}/customer/data-mining`,
+    RECOMENDCUSTOMER: `${BASE_URL}/customer/recommended-customers`,
     AGENTCALLING: `${BASE_URL}/customer/agent-call`,
     GETCALLLOGS: `${BASE_URL}/customer/getcalllogs`,
-    GETCALLREPORT: `${BASE_URL}/customer/get-call-report`
+    GETCALLREPORT: `${BASE_URL}/customer/get-call-report`,
+    DELETECALLLOG: (id: string) => `${BASE_URL}/customer/delete-calllog/${id}`,
+
+    GETCLOSEDDEAL: `${BASE_URL}/customer/closed-deals`,
+    GET_CLOSEDDEAL_BY_PARAMS: (params: string) => `${BASE_URL}/customer/closed-deals?${params}`,
+    CLOSEDEAL: (id: string) => `${BASE_URL}/customer/close-deal/${id}`,
+    REOPENDEAL: (id: string) => `${BASE_URL}/customer/reopen-deal/${id}`,
   },
   COMPANYPROJECTS: {
     GET_ALL: `${BASE_URL}/com/pro`,
@@ -87,6 +95,12 @@ export const API_ROUTES = {
     UPDATE: (id: string) => `${BASE_URL}/task/${id}`,
     DELETE: `${BASE_URL}/task`,
   },
+  NOTIFICATIONS:{
+    GET_ALL: `${BASE_URL}/notifications`,
+    GET_BY_PARAMS: (params: string) => `${BASE_URL}/notifications?${params}`,
+    MARK_READ: (id: string) => `${BASE_URL}/notifications/mark-read/${id}`,
+    MARK_ALL_READ: `${BASE_URL}/notifications/mark-all-read`,
+  },
   AIAGENT: {
     GET_ALL: `${BASE_URL}/aiagent`,
     GET_BY_ID: (id: string) => `${BASE_URL}/aiagent/${id}`,
@@ -95,6 +109,47 @@ export const API_ROUTES = {
     UPDATE: (id: string) => `${BASE_URL}/aiagent/${id}`,
     DELETE: (id: string) => `${BASE_URL}/aiagent/${id}`,
     ASSIGNAIAGENT: `${BASE_URL}/aiagent/assign`,
+  },
+  SOCIALCONTENT: {
+    REDDIT: {
+      GET_BY_QUERY: (query: string) => `${BASE_URL}/social-content/reddit/${query}`,
+    },
+    FACEBOOK: {
+      GET_ALL_POST: `${BASE_URL}/social-content/facebook`,
+      GET_BY_QUERY: (query: string) => `${BASE_URL}/social-content/facebook/${query}`,
+      SCRAPP_NEW_POSTS: `${BASE_URL}/social-content/facebook/scrap-new`
+    },
+    INSTAGRAM: {
+      GET_ALL_POST: `${BASE_URL}/social-content/instagram`,
+      GET_BY_QUERY: (query: string) => `${BASE_URL}/social-content/instagram/${query}`,
+      SCRAPP_NEW_POSTS: `${BASE_URL}/social-content/instagram/scrap-new`
+    },
+    MINEDLEAD: {
+      SAVE: `${BASE_URL}/social-content/minedlead/save`,
+      GET: `${BASE_URL}/social-content/minedlead/get`,
+      GET_BY_QUERY: (params: string) => `${BASE_URL}/social-content/minedlead/get?${params}`,
+      CONVERT: `${BASE_URL}/social-content/minedlead/convert`,
+    }
+  },
+  SOCIALMEDIA: {
+    INSTAGRAM: {
+      GET_LIVE_POST: `${BASE_URL}/social-auth/get-instagram-posts`,
+      GET_ANALYTICS: `${BASE_URL}/social-auth/get-instagram-analytics`,
+      DISCONNECT_ACCOUNT: `${BASE_URL}/social-auth/disconnect-instagram`,
+      SCHEDULE_POST: `${BASE_URL}/social-auth/schedule-instagram-post`,
+      GET_SCHEDULED_POST : (params:string)=> `${BASE_URL}/social-auth/scheduled-posts-data?platform=${params}`,
+
+    },
+    FACEBOOK: {
+      GET_LIVE_POST: `${BASE_URL}/social-auth/get-facebook-posts`,
+      GET_ANALYTICS: `${BASE_URL}/social-auth/get-facebook-analytics`,
+      DISCONNECT_ACCOUNT: `${BASE_URL}/social-auth/disconnect-facebook`,
+      SCHEDULE_POST: `${BASE_URL}/social-auth/schedule-facebook-post`,
+      GET_SCHEDULED_POST : (params:string)=> `${BASE_URL}/social-auth/scheduled-posts-data?platform=${params}`,
+    },
+    AUTOSOCIALAGENT:{
+      RUN: `${BASE_URL}/social-auth/auto-social-agent`
+    }
   },
   MASTERS: {
     CAMPAIGN: {
@@ -371,6 +426,7 @@ export const API_ROUTES = {
     GET_BY_ID: (id: String) => `${BASE_URL}/admin/${id}`,
     UPDATE_DETAILS: (id: String) => `${BASE_URL}/admin/${id}/details`,
     UPDATE_PASSWORD: (id: String) => `${BASE_URL}/admin/${id}/password`,
+    DEVLOGIN: `${BASE_URL}/admin/mode/dev/login`,
     DELETE: (id: String) => `${BASE_URL}/admin/${id}`,
   },
 
@@ -381,3 +437,5 @@ export const API_ROUTES = {
     DENYREQUEST: (id: String) => `${BASE_URL}/user/newusers/${id}`
   }
 };
+
+export const API_URL = "https://apipropertybulk.ibigdata.in";

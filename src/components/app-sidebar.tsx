@@ -18,6 +18,7 @@ import {
   ShieldUser,
   Settings,
   UsersIcon,
+  ExternalLink,
 } from "lucide-react";
 
 import { NavMain } from "../components/nav-main";
@@ -32,6 +33,7 @@ import {
 import { title } from "process";
 import { useAuth } from "@/context/AuthContext";
 import { FaRobot } from "react-icons/fa";
+import { TbSocial } from "react-icons/tb";
 
 // This is sample data.
 const data = {
@@ -60,6 +62,11 @@ const data = {
       title: "Contact Follow Up",
       url: "/followups/contact",
       icon: PlusSquare,
+    },
+    {
+      title: "External Leads",
+      url: "/minedlead",
+      icon: ExternalLink,
     },
         {
       title: "Clients",
@@ -95,6 +102,11 @@ const data = {
       title: "Task",
       url: "/task",
       icon: Pointer,
+    },
+    {
+      title:"Social Media Manager",
+      url:"/socialmedia-manager",
+      icon: TbSocial
     },
     {
       title: "Masters",
@@ -352,7 +364,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <ShieldUser className="w-6 h-6" />
         ) : (
           <img
-            src="/logo.webp"
+            src="/applogo.jpeg"
             alt="App Logo"
             className="h-12 w-40"
           />

@@ -73,7 +73,7 @@ const Avatar = ({ name }: { name: string }) => {
 }
 
 /* ─────────────────────────────────────────────── */
-const QualificationAgentWorkspace = () => {
+const QualificationAgentWorkspace = ({ isOpen }: { isOpen: boolean }) => {
     const [customers, setCustomers] = useState<any[]>([])
     const [selectedId, setSelectedId] = useState<string | null>(null)
     const [prompt, setPrompt] = useState('')
@@ -83,6 +83,7 @@ const QualificationAgentWorkspace = () => {
     const [searchField, setSearchField] = useState<'All' | 'Name' | 'Email' | 'Campaign' | 'Type' | 'Phone'>('All')
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const [isCustomersLoading, setIsCustomersLoading] = useState(true)
 
     const mapCustomer = (item: any) => {
         const date = new Date(item.createdAt)
@@ -124,11 +125,34 @@ const QualificationAgentWorkspace = () => {
         }
     }
 
-    useEffect(() => {
-        getCustomer().then((res: any) => {
-            if (res) setCustomers(res.map(mapCustomer))
-        })
-    }, [])
+
+
+useEffect(() => {
+    if (!isOpen) return; // only run when popup opens
+
+    const fetchCustomers = async () => {
+        setIsCustomersLoading(true); // important
+
+        try {
+            const res: any = await getCustomer()
+            if (res) {
+                const mapped = res.map(mapCustomer)
+                setCustomers(mapped)
+
+                // optional: auto select first
+                if (mapped.length) {
+                    setSelectedId(mapped[0]._id)
+                }
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setIsCustomersLoading(false)
+        }
+    }
+
+    fetchCustomers()
+}, [isOpen])
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -320,7 +344,19 @@ const QualificationAgentWorkspace = () => {
 
                 {/* Customer list */}
                 <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#e2e8f0 transparent' }}>
-                    {filteredCustomers.length === 0 ? (
+                    {isCustomersLoading ? (
+    <div className="flex flex-col gap-3 px-4 py-4">
+        {[1,2,3,4,5].map(i => (
+            <div key={i} className="animate-pulse flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-gray-200" />
+                <div className="flex-1">
+                    <div className="h-2.5 bg-gray-200 rounded w-2/3 mb-1.5" />
+                    <div className="h-2 bg-gray-100 rounded w-1/2" />
+                </div>
+            </div>
+        ))}
+    </div>
+) : filteredCustomers.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
                             <div className="w-8 h-8 rounded-xl flex items-center justify-center mb-2"
                                 style={{ background: '#f1f5f9', color: '#cbd5e1' }}>
