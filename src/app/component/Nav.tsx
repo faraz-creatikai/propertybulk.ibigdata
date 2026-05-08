@@ -101,7 +101,7 @@ function NotificationRow({
             ${isUnread ? "font-semibold text-gray-900" : "font-medium text-gray-400"}`}>
             {n.title}
           </p>
-          <span className={`text-[10px] shrink-0 font-medium tabular-nums
+          <span className={`text-[10px] max-sm:hidden shrink-0 font-medium tabular-nums
             ${isUnread ? "text-[var(--color-gray)]" : "text-gray-300"}`}>
             {timeAgo(n.createdAt)}
           </span>
@@ -113,17 +113,24 @@ function NotificationRow({
         </p>
 
         <div className="flex items-center justify-between mt-1.5">
-          {/* Entity tag */}
-          <span className={`
+          <div className=" flex items-center justify-between w-full">
+            {/* Entity tag */}
+            <span className={`
             inline-flex items-center px-1.5 py-0.5 rounded-[4px]
             text-[9px] font-bold uppercase tracking-wider
             ${isUnread
-              ? "bg-[var(--color-primary-lighter)] text-[var(--color-primary-dark)] border border-[var(--color-primary-light)]"
-              : "bg-gray-100 text-gray-300 border border-gray-200"
-            }
+                ? "bg-[var(--color-primary-lighter)] text-[var(--color-primary-dark)] border border-[var(--color-primary-light)]"
+                : "bg-gray-100 text-gray-300 border border-gray-200"
+              }
           `}>
-            {n.entityType}
-          </span>
+              {n.entityType}
+            </span>
+            <span className={`text-[10px] sm:hidden shrink-0 font-medium tabular-nums
+            ${isUnread ? "text-[var(--color-gray)]" : "text-gray-300"}`}>
+              {timeAgo(n.createdAt)}
+            </span>
+            </div>
+
 
           {/* Hover hint + mark-read */}
           <div className="flex items-center gap-2">
@@ -202,6 +209,7 @@ export default function Navbar() {
     setNotiLoading(false);
   }, []);
 
+  // Fetch notifications on mount
   useEffect(() => {
     (async () => {
       const res = await getMyNotifications();
@@ -237,9 +245,10 @@ export default function Navbar() {
     };
 
     socket.on("notification", handleNewNotification);
-    return () => { socket.off("notification", handleNewNotification);
-       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-     };
+    return () => {
+      socket.off("notification", handleNewNotification);
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
   }, [admin?._id]);              // ← re-runs when admin becomes available
 
   const handleMarkRead = async (id: string, e: React.MouseEvent) => {
@@ -321,7 +330,7 @@ export default function Navbar() {
         }}
       />
       <div className="flex justify-end items-center bg-white max-sm:bg-[var(--color-primary)] max-sm:text-white text-gray-800">
-        <button onClick={toggleTheme} className="p-2 rounded-md hover:bg-gray-100 hover:text-[var(--color-primary)] transition-colors">
+        <button onClick={toggleTheme} className="p-2 max-sm:hidden rounded-md hover:bg-gray-100 hover:text-[var(--color-primary)] transition-colors">
           {dark ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
@@ -342,21 +351,24 @@ export default function Navbar() {
               >
                 <IoMdNotificationsOutline className="text-xl" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 min-w-[15px] h-[15px] px-[3px] flex items-center justify-center rounded-full text-[8px] font-bold bg-[var(--color-primary)] text-white ring-[1.5px] ring-white pointer-events-none">
+                  <span className="absolute top-1.5 right-1.5 min-w-[15px] h-[15px] px-[3px] flex items-center justify-center rounded-full text-[8px] font-bold bg-[var(--color-primary)] max-sm:bg-white max-sm:text-[var(--color-primary)] text-white ring-[1.5px] ring-white pointer-events-none">
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
                 )}
               </div>
 
+
               {/* Dropdown */}
               <div
-                className={`absolute top-[52px] right-0 z-50 ${transitionClasses} ${openMenu === "notifications"
-                  ? "opacity-100 scale-100 pointer-events-auto"
-                  : "opacity-0 scale-95 pointer-events-none"
+                className={`absolute top-[52px] z-50 right-0 md:-left-10 max-sm:fixed max-sm:top-[56px] max-sm:left-4 max-sm:right-4
+    ${transitionClasses}
+    ${openMenu === "notifications"
+                    ? "opacity-100 scale-100 pointer-events-auto"
+                    : "opacity-0 scale-95 pointer-events-none"
                   }`}
               >
                 {/* Panel */}
-                <div className="w-[340px] max-md:w-[300px] bg-white rounded-2xl border border-gray-200 shadow-[0_8px_30px_rgba(0,0,0,0.10),0_2px_8px_rgba(0,0,0,0.06)] overflow-hidden">
+                <div className="sm:w-[340px] w-full bg-white rounded-2xl border border-gray-200 shadow-[0_8px_30px_rgba(0,0,0,0.10),0_2px_8px_rgba(0,0,0,0.06)] overflow-hidden">
 
                   {/* Header */}
                   <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100">

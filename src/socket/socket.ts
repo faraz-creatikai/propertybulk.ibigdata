@@ -9,6 +9,7 @@ export const initSocket = (adminId: string): Socket => {
   socket = io(API_URL, {
     withCredentials: true,
     auth: { adminId },
+    transports: ["websocket"], 
   });
 console.log(" socket initialized with adminId: ", adminId);
   return socket;
