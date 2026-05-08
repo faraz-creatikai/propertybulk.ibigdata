@@ -165,6 +165,8 @@ export default function Customer() {
   const [tableDialogcustomerData, setTableDialogCustomerData] = useState<customerGetDataInterface[]>([]);
 
   const [isFollowupOpen, setIsFollowupOpen] = useState(false);
+  const [isDealCloseOpen,setIsDealCloseOpen] = useState(false);
+  const [dealCloseData,setDealCloseData] = useState<any>(null);
   const [selectedCustomerFollowupId, setSelectedCustomerFollowupId] = useState<string | null>(null);
   const [followupDialogData, setFollowupDialogData] = useState<customerFollowupAllDataInterface[] | null>([]);
   const [isfollowupDialogOpen, setIsFollowupDialogOpen] = useState(false);
@@ -183,6 +185,7 @@ export default function Customer() {
   const [isTemperatureDialogOpen, setIsTemperatureDialogOpen] = useState(false);
   const [temperatureDialogData, setTemperatureDialogData] = useState<any>(null);
   const [isTodayDialogOpen, setIsTodayDialogOpen] = useState(false);
+  
 
   const temperatureConfig: any = {
     hot: {
@@ -1743,8 +1746,11 @@ export default function Customer() {
   const closeDeal = async (id: string) => {
     const response = await closeCustomerDeal(id);
     if (response) {
+       setIsDealCloseOpen(false); setDealCloseData(null); 
       toast.success("Deal closed successfully");
+      return;
     }
+    toast.error("Failed to close deal");
   };
 
 
@@ -2066,6 +2072,56 @@ export default function Customer() {
                 }
               </div>
             </div>
+          </PopupMenu>
+        )
+      }
+
+      {
+        isDealCloseOpen  && (
+          <PopupMenu onClose={() => { setIsDealCloseOpen(false); setDealCloseData(null); }}>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 w-full max-w-md mx-4">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-[var(--color-primary-lighter)] flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">Close Deal</h3>
+            <p className="text-xs text-gray-500">This action will mark the deal as closed</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-700 mb-5">
+          Are you sure you want to close the deal for{" "}
+          <span className="font-semibold text-gray-900">{dealCloseData?.name}</span>?
+        </p>
+        <div className="flex gap-3 justify-end">
+          <button
+           onClick={() => {
+                      setDealCloseData(null)
+                      setIsDealCloseOpen(false);
+                    }}
+            className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+           onClick={()=> closeDeal(dealCloseData?.id)}
+           // disabled={loading}
+            className="px-4 py-2 text-sm font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+           {/*  {loading && (
+              <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"/>
+              </svg>
+            )} */}
+            Yes, Close Deal
+          </button>
+        </div>
+      </div>
+    </div>
           </PopupMenu>
         )
       }
@@ -3899,7 +3955,12 @@ export default function Customer() {
                                         </Button>
                                         <Button
                                           onClick={() => {
-                                            closeDeal(item._id);
+                                           setDealCloseData({
+                                              id: item._id,
+                                              name: item.Name,
+                                              current: item.LeadTemperature || "cold"
+                                            });
+                                            setIsDealCloseOpen(true);
                                           }}
                                           sx={{
                                             backgroundColor: "#E8F5E9",
@@ -3915,7 +3976,7 @@ export default function Customer() {
                                           }}
 
                                         >
-                                          <FaHandshakeSimple size={12} />
+                                          <FaHandshakeSimple size={20} />
                                         </Button>
                                       </div>
                                     );
