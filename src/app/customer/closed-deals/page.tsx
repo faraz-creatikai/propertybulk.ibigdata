@@ -68,7 +68,7 @@ function SkeletonRow() {
 
 // ─── Confirm Modal ────────────────────────────────────────────────────────────
 
-function ConfirmModal({
+export function ConfirmModal({
   modal, onClose, onConfirm, loading,
 }: {
   modal: ConfirmModal;

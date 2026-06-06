@@ -1,4 +1,4 @@
-export const BASE_URL = "https://apipropertybulk.ibigdata.in/api";
+export const BASE_URL = "https://apipropertybulk.ibigdata.in//api";
 //https://live-project-backend-1.onrender.com
 //https://propertyapi.aileadgenie.cloud/api
 //https://apidomain.ibigdata.in
@@ -23,6 +23,7 @@ export const API_ROUTES = {
   },
   CUSTOMER: {
     GET_ALL: `${BASE_URL}/customer`,
+     GET_ALL_TOTAL: `${BASE_URL}/customer/all`,
     GET_FAVOURITES_CUSTOMER: `${BASE_URL}/customer/favouriteS/all`,
     GET_TODAY_ALL: `${BASE_URL}/customer/today`,
     GET_BY_ID: (id: string) => `${BASE_URL}/customer/${id}`,
@@ -95,7 +96,7 @@ export const API_ROUTES = {
     UPDATE: (id: string) => `${BASE_URL}/task/${id}`,
     DELETE: `${BASE_URL}/task`,
   },
-  NOTIFICATIONS:{
+  NOTIFICATIONS: {
     GET_ALL: `${BASE_URL}/notifications`,
     GET_BY_PARAMS: (params: string) => `${BASE_URL}/notifications?${params}`,
     MARK_READ: (id: string) => `${BASE_URL}/notifications/mark-read/${id}`,
@@ -109,6 +110,20 @@ export const API_ROUTES = {
     UPDATE: (id: string) => `${BASE_URL}/aiagent/${id}`,
     DELETE: (id: string) => `${BASE_URL}/aiagent/${id}`,
     ASSIGNAIAGENT: `${BASE_URL}/aiagent/assign`,
+  },
+  TABBLY:{
+    GETCURRENTAGENT: `${BASE_URL}/tabbly/current-agent`,
+    GETAGENTVOICES: `${BASE_URL}/tabbly/agent-voices`,
+    UPDATEAGENT: `${BASE_URL}/tabbly/update-agent`,
+  },
+
+  SALESSCRIPT: {
+    GET_ALL: `${BASE_URL}/salesscript`,
+    GET_BY_ID: (id: string) => `${BASE_URL}/salesscript/${id}`,
+    GET_BY_PARAMS: (params: string) => `${BASE_URL}/salesscript?${params}`,
+    ADD: `${BASE_URL}/salesscript`,
+    UPDATE: (id: string) => `${BASE_URL}/salesscript/${id}`,
+    DELETE: (id: string) => `${BASE_URL}/salesscript/${id}`,
   },
   SOCIALCONTENT: {
     REDDIT: {
@@ -137,7 +152,7 @@ export const API_ROUTES = {
       GET_ANALYTICS: `${BASE_URL}/social-auth/get-instagram-analytics`,
       DISCONNECT_ACCOUNT: `${BASE_URL}/social-auth/disconnect-instagram`,
       SCHEDULE_POST: `${BASE_URL}/social-auth/schedule-instagram-post`,
-      GET_SCHEDULED_POST : (params:string)=> `${BASE_URL}/social-auth/scheduled-posts-data?platform=${params}`,
+      GET_SCHEDULED_POST: (params: string) => `${BASE_URL}/social-auth/scheduled-posts-data?platform=${params}`,
 
     },
     FACEBOOK: {
@@ -145,9 +160,9 @@ export const API_ROUTES = {
       GET_ANALYTICS: `${BASE_URL}/social-auth/get-facebook-analytics`,
       DISCONNECT_ACCOUNT: `${BASE_URL}/social-auth/disconnect-facebook`,
       SCHEDULE_POST: `${BASE_URL}/social-auth/schedule-facebook-post`,
-      GET_SCHEDULED_POST : (params:string)=> `${BASE_URL}/social-auth/scheduled-posts-data?platform=${params}`,
+      GET_SCHEDULED_POST: (params: string) => `${BASE_URL}/social-auth/scheduled-posts-data?platform=${params}`,
     },
-    AUTOSOCIALAGENT:{
+    AUTOSOCIALAGENT: {
       RUN: `${BASE_URL}/social-auth/auto-social-agent`
     }
   },

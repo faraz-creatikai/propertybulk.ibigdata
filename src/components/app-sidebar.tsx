@@ -34,6 +34,8 @@ import { title } from "process";
 import { useAuth } from "@/context/AuthContext";
 import { FaRobot } from "react-icons/fa";
 import { TbSocial } from "react-icons/tb";
+import { RiFilePaper2Fill } from "react-icons/ri";
+import { GrConfigure } from "react-icons/gr";
 
 // This is sample data.
 const data = {
@@ -92,6 +94,11 @@ const data = {
       title: "Ai Agents",
       url: "/aiagents",
       icon: FaRobot,
+    },
+    {
+      title:"Sales Script",
+      url: "/salesscript",
+      icon: RiFilePaper2Fill
     },
     {
       title: "Schedules",
@@ -286,7 +293,19 @@ const data = {
         {
           title: "Customer Fields",
           url: "/settings/customer/customer-fields",
-        },]
+        },
+      ]
+    },
+    {
+      title:"Configuration",
+      url:"#",
+      icon: GrConfigure,
+      items:[
+        {
+          title: "Tabbly",
+          url: "/configuration/tabbly",
+        }
+      ]
     },
     {
       title: "Users",
